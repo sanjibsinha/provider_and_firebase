@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:provider_and_firebase/view/let_us_chat.dart';
 import '../model/state_of_application.dart';
-import '../controller/authentication.dart';
-import '../controller/widgets.dart';
+import '../controller/authenticate_to_firebase.dart';
+import '../controller/all_widgets.dart';
 
 class ChatHomePage extends StatelessWidget {
   const ChatHomePage({Key? key}) : super(key: key);
@@ -22,7 +22,7 @@ class ChatHomePage extends StatelessWidget {
               'https://cdn.pixabay.com/photo/2022/04/07/11/45/bird-7117346_960_720.jpg'),
           const SizedBox(height: 8),
           Consumer<StateOfApplication>(
-            builder: (context, appState, _) => Authentication(
+            builder: (context, appState, _) => AuthenticationForFirebase(
               email: appState.email,
               loginState: appState.loginState,
               startLoginFlow: appState.startLoginFlow,
@@ -48,7 +48,7 @@ class ChatHomePage extends StatelessWidget {
             builder: (context, appState, _) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (appState.loginState == ApplicationLoginState.loggedIn) ...[
+                if (appState.loginState == UserStatus.loggedIn) ...[
                   TextButton(
                     onPressed: () {
                       Navigator.push(
@@ -56,8 +56,8 @@ class ChatHomePage extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) => LetUsChat(
                             addMessage: (message) =>
-                                appState.addMessageToGuestBook(message),
-                            messages: appState.guestBookMessages,
+                                appState.addMessageToChatBook(message),
+                            messages: appState.chatBookMessages,
                           ),
                         ),
                       );
@@ -67,7 +67,8 @@ class ChatHomePage extends StatelessWidget {
                       style: GoogleFonts.laila(
                         fontSize: 30.0,
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: Colors.yellow,
+                        backgroundColor: Colors.red,
                       ),
                     ),
                   ),

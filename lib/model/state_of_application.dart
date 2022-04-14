@@ -1,11 +1,10 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
-
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../controller/authentication.dart';
+import '../controller/authenticate_to_firebase.dart';
 import '../firebase_options.dart';
 
 import '../view/let_us_chat.dart';
@@ -22,15 +21,15 @@ class StateOfApplication extends ChangeNotifier {
 
     FirebaseAuth.instance.userChanges().listen((user) {
       if (user != null) {
-        _loginState = ApplicationLoginState.loggedIn;
-        _guestBookSubscription = FirebaseFirestore.instance
-            .collection('guestbook')
+        _loginState = UserStatus.loggedIn;
+        _chatBookSubscription = FirebaseFirestore.instance
+            .collection('chatbook')
             .orderBy('timestamp', descending: true)
             .snapshots()
             .listen((snapshot) {
-          _guestBookMessages = [];
+          _chatBookMessages = [];
           for (final document in snapshot.docs) {
-            _guestBookMessages.add(
+            _chatBookMessages.add(
               LetUsChatMessage(
                 name: document.data()['name'] as String,
                 message: document.data()['text'] as String,
@@ -40,27 +39,27 @@ class StateOfApplication extends ChangeNotifier {
           notifyListeners();
         });
       } else {
-        _loginState = ApplicationLoginState.loggedOut;
-        _guestBookMessages = [];
+        _loginState = UserStatus.loggedOut;
+        _chatBookMessages = [];
       }
       notifyListeners();
     });
   }
 
-  ApplicationLoginState _loginState = ApplicationLoginState.loggedOut;
-  ApplicationLoginState get loginState => _loginState;
+  UserStatus _loginState = UserStatus.loggedOut;
+  UserStatus get loginState => _loginState;
 
   String? _email;
   String? get email => _email;
 
-  StreamSubscription<QuerySnapshot>? _guestBookSubscription;
-  StreamSubscription<QuerySnapshot>? get guestBookSubscription =>
-      _guestBookSubscription;
-  List<LetUsChatMessage> _guestBookMessages = [];
-  List<LetUsChatMessage> get guestBookMessages => _guestBookMessages;
+  StreamSubscription<QuerySnapshot>? _chatBookSubscription;
+  StreamSubscription<QuerySnapshot>? get chatBookSubscription =>
+      _chatBookSubscription;
+  List<LetUsChatMessage> _chatBookMessages = [];
+  List<LetUsChatMessage> get chatBookMessages => _chatBookMessages;
 
   void startLoginFlow() {
-    _loginState = ApplicationLoginState.emailAddress;
+    _loginState = UserStatus.emailAddress;
     notifyListeners();
   }
 
@@ -72,9 +71,9 @@ class StateOfApplication extends ChangeNotifier {
       var methods =
           await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
       if (methods.contains('password')) {
-        _loginState = ApplicationLoginState.password;
+        _loginState = UserStatus.password;
       } else {
-        _loginState = ApplicationLoginState.register;
+        _loginState = UserStatus.register;
       }
       _email = email;
       notifyListeners();
@@ -99,7 +98,7 @@ class StateOfApplication extends ChangeNotifier {
   }
 
   void cancelRegistration() {
-    _loginState = ApplicationLoginState.emailAddress;
+    _loginState = UserStatus.emailAddress;
     notifyListeners();
   }
 
@@ -121,13 +120,13 @@ class StateOfApplication extends ChangeNotifier {
     FirebaseAuth.instance.signOut();
   }
 
-  Future<DocumentReference> addMessageToGuestBook(String message) {
-    if (_loginState != ApplicationLoginState.loggedIn) {
+  Future<DocumentReference> addMessageToChatBook(String message) {
+    if (_loginState != UserStatus.loggedIn) {
       throw Exception('Must be logged in');
     }
 
     return FirebaseFirestore.instance
-        .collection('guestbook')
+        .collection('chatbook')
         .add(<String, dynamic>{
       'text': message,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
